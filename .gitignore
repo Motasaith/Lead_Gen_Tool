@@ -1,0 +1,273 @@
+# ============================================================
+# LeadBot — .gitignore
+# ============================================================
+# This file lives at the project root (D:\try\Lead_Generator\.gitignore)
+# and protects BOTH the outer project and the leadbot/ subpackage.
+
+# ------------------------------------------------------------
+# 1. Python — virtual environments
+# ------------------------------------------------------------
+# NEVER commit virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+leadbot/venv/
+leadbot/.venv/
+__venv__/
+.python-version
+
+# ------------------------------------------------------------
+# 2. Python — compiled / cached files
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+*.whl
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.manifest
+*.spec   # Note: leadbot.spec IS tracked (template spec for build). We override below.
+
+# Leadbot's own .spec file IS the build template — keep it tracked
+!leadbot/leadbot.spec
+
+# Inline pip cache / wheel
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ------------------------------------------------------------
+# 3. Python — distribution / packaging
+# ------------------------------------------------------------
+dist/
+build/
+*.egg-info/
+*.dist-info/
+.installed.cfg
+MANIFEST
+
+# LeadBot's standalone .exe is built by the user — DO NOT commit (25MB)
+leadbot/dist/
+leadbot/build/
+
+# Allow the leadbot.spec template file to be tracked (PyInstaller build template)
+!leadbot/leadbot.spec
+
+# ------------------------------------------------------------
+# 4. Environment & secrets
+# ------------------------------------------------------------
+# .env files contain API keys, webhook URLs, and personal config
+.env
+.env.*
+!.env.example
+
+# Local secrets / notes
+*.local
+*.secret
+secrets.yaml
+secrets.json
+
+# ------------------------------------------------------------
+# 5. IDEs & editors
+# ------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# VSCode workspace settings (if any)
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/extensions.json
+
+# PyCharm
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries
+.idea/shelf
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Jupyter
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# ------------------------------------------------------------
+# 6. Logs, runtime, and OS temp
+# ------------------------------------------------------------
+*.log
+logs/
+log/
+*.log.*
+*.pid
+*.seed
+*.pid.lock
+
+# LeadBot specific runtime logs
+leadbot/dashboard.log
+leadbot/data/jobs.log
+leadbot/data/pipeline.log
+*.tmp
+*.bak
+*.swp
+
+# ------------------------------------------------------------
+# 7. LeadBot data outputs (JSON / CSV from crawls)
+# ------------------------------------------------------------
+# These are auto-generated runtime artifacts. The user runs the
+# pipeline and the data folder fills up. NOT meant to be committed.
+leadbot/data/leads_*.json
+leadbot/data/leads_*.csv
+leadbot/data/seen.json
+leadbot/data/dedup.json
+leadbot/data/state.json
+leadbot/data/*.tmp
+
+# Allow a .gitkeep so the folder structure is preserved
+!leadbot/data/.gitkeep
+
+# ------------------------------------------------------------
+# 8. Playwright / browser cache
+# ------------------------------------------------------------
+# Playwright downloads Chromium, Firefox, WebKit to a cache
+playwright/.cache/
+playwright-cache/
+.ms-playwright/
+.playwright/
+.cache/ms-playwright/
+
+# Crawl4AI browser cache
+.crawl4ai/
+crawl4ai_cache/
+playwright_assets/
+
+# ------------------------------------------------------------
+# 9. Ollama / LLM model files
+# ------------------------------------------------------------
+# If you ever pull models to a local dir (e.g. via Ollama),
+# ignore the multi-GB model files
+.ollama/
+ollama_models/
+models/*.gguf
+models/*.bin
+models/*.safetensors
+
+# ------------------------------------------------------------
+# 10. OS & user files
+# ------------------------------------------------------------
+# Windows
+$RECYCLE.BIN/
+ehthumbs.db
+ehthumbs_vista.db
+*.lnk
+*.url
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.fuse_hidden*
+.Trash-*
+.nfs*
+
+# ------------------------------------------------------------
+# 11. Backups and archives
+# ------------------------------------------------------------
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.tgz
+
+# ------------------------------------------------------------
+# 12. Sensitive / personal artifacts
+# ------------------------------------------------------------
+# Anything the user might accidentally drop in
+credentials.json
+service-account*.json
+*_key.pem
+*_rsa
+*.key
+*.pem
+*.p12
+*.pfx
+
+# ------------------------------------------------------------
+# 13. Test / coverage / profiling outputs
+# ------------------------------------------------------------
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+.cache
+nosetests.xml
+coverage/
+profile_*.txt
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+
+# ------------------------------------------------------------
+# 14. Misc / everything else
+# ------------------------------------------------------------
+# NPM (just in case)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Temporary files
+*.swp
+*.swo
+*.tmp
+*.temp
+*.orig
+*.rej
+*.patch
+
+# Local config overrides
+.local
+.local.*
+rc.local

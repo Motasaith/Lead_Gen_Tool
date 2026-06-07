@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>🕷️ LeadBot Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  margin: 0; padding: 0;
+  background: #0f1115; color: #e6e6e6;
+}
+header {
+  background: linear-gradient(90deg, #1a1d24 0%, #1e3a5f 100%);
+  padding: 16px 24px;
+  border-bottom: 1px solid #2a2d35;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+header h1 { margin: 0; font-size: 20px; }
+header .status { font-size: 13px; color: #9ecbff; }
+header .status .running { color: #2ecc71; }
+header .status .stopped { color: #888; }
+
+main { display: grid; grid-template-columns: 1fr 380px; gap: 16px; padding: 16px; }
+@media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+
+.card {
+  background: #1a1d24;
+  border: 1px solid #2a2d35;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.card h2 { margin: 0 0 12px 0; font-size: 16px; color: #9ecbff; }
+
+.btn {
+  background: #2a4a6f; color: white; border: 0;
+  padding: 8px 16px; border-radius: 4px; cursor: pointer;
+  font-size: 14px; font-weight: 600;
+}
+.btn:hover { background: #3a5a8f; }
+.btn:disabled { background: #555; cursor: not-allowed; }
+.btn-primary { background: #2ecc71; }
+.btn-primary:hover { background: #27ae60; }
+.btn-secondary { background: #555; }
+.btn-danger { background: #c0392b; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.stat-grid .stat {
+  background: #14171c; padding: 12px; border-radius: 4px;
+  text-align: center;
+}
+.stat .num { font-size: 28px; font-weight: 700; color: #9ecbff; }
+.stat .label { font-size: 11px; color: #888; text-transform: uppercase; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #2a2d35; }
+th { background: #14171c; position: sticky; top: 0; font-size: 12px; color: #9ecbff; }
+tr:hover { background: #161922; }
+a { color: #7cc4ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.score { font-weight: 600; padding: 2px 6px; border-radius: 3px; }
+.score-hi { color: #2ecc71; }
+.score-md { color: #f39c12; }
+.score-lo { color: #95a5a6; }
+.badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+.b-yc { background: #ff6600; color: white; }
+.b-bark { background: #1e3a5f; color: #9ecbff; }
+.b-goodfirms { background: #3d1e5f; color: #d09ecb; }
+.b-hiring { background: #1e5f3d; color: #9ecba8; }
+.b-remotive { background: #1e5f3d; color: #9ecba8; }
+.b-arbeitnow { background: #5f1e3d; color: #cb9eb3; }
+.b-jobicy { background: #5f3d1e; color: #cbb19e; }
+.b-4dayweek { background: #1e5f5f; color: #9ecbcb; }
+.b-outdated { background: #5f3d1e; color: #cbb19e; }
+.b-frontend_dev { background: #5f1e3d; color: #cb9eb3; }
+.b-yellowpages { background: #1e3a5f; color: #9ecbff; }
+.b-clutch { background: #3d1e5f; color: #d09ecb; }
+.b-github { background: #1e5f3d; color: #9ecba8; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.filters input, .filters select {
+  background: #14171c; color: #e6e6e6; border: 1px solid #2a2d35;
+  padding: 6px 10px; border-radius: 4px; font-family: inherit; font-size: 13px;
+}
+
+#log-stream {
+  background: #0a0c10; border: 1px solid #2a2d35; border-radius: 4px;
+  padding: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px;
+  height: 200px; overflow-y: auto; color: #c0c0c0;
+}
+#log-stream .line { white-space: pre-wrap; word-break: break-all; }
+
+.lead-table-wrapper { max-height: 60vh; overflow-y: auto; }
+
+#toast {
+  position: fixed; bottom: 20px; right: 20px;
+  background: #2ecc71; color: white; padding: 12px 20px;
+  border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  display: none; z-index: 1000; font-weight: 600;
+}
+#toast.error { background: #c0392b; }
+
+.lead-detail-modal {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.lead-detail-modal.open { display: flex; }
+.lead-detail-modal .modal-content {
+  background: #1a1d24; border-radius: 8px; padding: 24px;
+  max-width: 600px; max-height: 80vh; overflow-y: auto;
+  width: 90%;
+}
+.lead-detail-modal pre { background: #14171c; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+
+.tab-bar { display: flex; border-bottom: 1px solid #2a2d35; margin-bottom: 12px; }
+.tab { padding: 8px 16px; cursor: pointer; color: #888; border-bottom: 2px solid transparent; }
+.tab.active { color: #9ecbff; border-bottom-color: #9ecbff; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🕷️ LeadBot Dashboard</h1>
+    <div class="status">
+      Status: <span id="run-state" class="stopped">●</span> <span id="run-state-text">Idle</span>
+    </div>
+  </div>
+  <div>
+    <button class="btn btn-primary" id="run-btn" onclick="runPipeline()">▶ Run Pipeline</button>
+    <button class="btn btn-secondary" onclick="refreshAll()">↻ Refresh</button>
+  </div>
+</header>
+
+<main>
+  <div>
+    <!-- Stats -->
+    <div class="card">
+      <h2>📊 Stats</h2>
+      <div class="stat-grid" id="stat-grid">Loading...</div>
+    </div>
+
+    <!-- Leads -->
+    <div class="card">
+      <h2>🎯 Leads <span id="lead-count" style="color:#888;font-weight:normal;font-size:13px"></span></h2>
+      <div class="filters">
+        <input id="q" placeholder="Search company, email, country..." style="flex:1;min-width:200px">
+        <select id="src-filter">
+          <option value="">All sources</option>
+        </select>
+        <select id="type-filter">
+          <option value="">All lead types</option>
+          <option value="service_request">🎯 Service requests</option>
+          <option value="hiring_signal">💼 Hiring signals</option>
+          <option value="outdated_site">🔧 Outdated sites</option>
+          <option value="agency">🏢 Agencies</option>
+          <option value="designer">🎨 Designers</option>
+        </select>
+        <select id="score-filter">
+          <option value="0">Any score</option>
+          <option value="30">≥ 30</option>
+          <option value="50">≥ 50</option>
+          <option value="70">≥ 70</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:4px;color:#888">
+          <input type="checkbox" id="email-only"> Has email
+        </label>
+      </div>
+      <div class="lead-table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px">Score</th>
+              <th>Company</th>
+              <th>Title</th>
+              <th>Source</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody id="lead-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <!-- Live Logs -->
+    <div class="card">
+      <h2>📜 Live Logs</h2>
+      <div id="log-stream"></div>
+    </div>
+
+    <!-- Settings tabs -->
+    <div class="card">
+      <div class="tab-bar">
+        <div class="tab active" data-tab="webhooks" onclick="switchTab('webhooks')">🔔 Webhooks</div>
+        <div class="tab" data-tab="actions" onclick="switchTab('actions')">⚡ Actions</div>
+      </div>
+
+      <div id="tab-webhooks" class="tab-content active">
+        <p style="color:#888;font-size:12px;margin:0 0 12px 0">
+          Add webhook URLs to get notified on new high-score leads. See <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks" target="_blank">Discord webhooks</a> for setup.
+        </p>
+        <label style="display:block;margin-bottom:8px;font-size:12px;color:#9ecbff">Discord Webhook URL</label>
+        <input id="discord-webhook" placeholder="https://discord.com/api/webhooks/..." style="width:100%;margin-bottom:12px;background:#14171c;color:#e6e6e6;border:1px solid #2a2d35;padding:6px;border-radius:4px">
+
+        <label style="display:block;margin-bottom:8px;font-size:12px;color:#9ecbff">Telegram Bot Token</label>
+        <input id="telegram-token" placeholder="123456:ABC-DEF..." style="width:100%;margin-bottom:8px;background:#14171c;color:#e6e6e6;border:1px solid #2a2d35;padding:6px;border-radius:4px">
+        <input id="telegram-chat" placeholder="Chat ID" style="width:100%;margin-bottom:12px;background:#14171c;color:#e6e6e6;border:1px solid #2a2d35;padding:6px;border-radius:4px">
+
+        <label style="display:block;margin-bottom:8px;font-size:12px;color:#9ecbff">Slack Webhook URL</label>
+        <input id="slack-webhook" placeholder="https://hooks.slack.com/services/..." style="width:100%;margin-bottom:12px;background:#14171c;color:#e6e6e6;border:1px solid #2a2d35;padding:6px;border-radius:4px">
+
+        <label style="display:block;margin-bottom:8px;font-size:12px;color:#9ecbff">Min score for notifications</label>
+        <input id="min-score" type="number" value="30" style="width:100px;background:#14171c;color:#e6e6e6;border:1px solid #2a2d35;padding:6px;border-radius:4px">
+
+        <div style="margin-top:12px">
+          <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+          <button class="btn btn-secondary" onclick="testNotification()">🔔 Test Notification</button>
+        </div>
+      </div>
+
+      <div id="tab-actions" class="tab-content">
+        <p style="color:#888;font-size:12px;margin:0 0 12px 0">Quick actions for your leads</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn" onclick="exportCSV()">📥 Export ALL leads to CSV</button>
+          <button class="btn" onclick="exportFilteredCSV()">📥 Export FILTERED leads to CSV</button>
+          <button class="btn" onclick="copyEmails()">📋 Copy all emails to clipboard</button>
+          <button class="btn" onclick="openDataFolder()">📂 Open data folder</button>
+          <a href="https://github.com/unclecode/crawl4ai" target="_blank" class="btn" style="text-decoration:none;text-align:center">📖 Crawl4AI docs</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Lead detail modal -->
+<div class="lead-detail-modal" id="lead-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content">
+    <h2 id="modal-title">Lead Detail</h2>
+    <pre id="modal-body"></pre>
+    <div id="modal-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+let allLeads = [];
+let sources = new Set();
+let es;  // EventSource for logs
+
+// ----- Initial load -----
+async function refreshAll() {
+  await Promise.all([loadLeads(), loadStats(), loadStatus(), loadSettings()]);
+}
+
+// ----- Loads -----
+async function loadLeads() {
+  const params = new URLSearchParams();
+  const search = document.getElementById('q').value;
+  const src = document.getElementById('src-filter').value;
+  const type = document.getElementById('type-filter').value;
+  const minScore = document.getElementById('score-filter').value;
+  const emailOnly = document.getElementById('email-only').checked;
+  if (search) params.set('search', search);
+  if (src) params.set('source', src);
+  if (type) params.set('lead_type', type);
+  if (minScore) params.set('min_score', minScore);
+  if (emailOnly) params.set('has_email', 'true');
+  params.set('limit', '500');
+  const res = await fetch('/api/leads?' + params);
+  const data = await res.json();
+  allLeads = data.results;
+  document.getElementById('lead-count').textContent = `(${data.total} total)`;
+  renderLeads();
+  // Update source filter
+  const srcSel = document.getElementById('src-filter');
+  const current = srcSel.value;
+  srcSel.innerHTML = '<option value="">All sources</option>' + [...sources].sort().map(s => `<option ${s===current?'selected':''}>${s}</option>`).join('');
+}
+
+function renderLeads() {
+  const rows = allLeads.map((l, i) => {
+    const score = Math.round(l.score || 0);
+    const scoreClass = score >= 60 ? 'score-hi' : score >= 30 ? 'score-md' : 'score-lo';
+    const name = (l.company_name || '—').replace(/</g, '&lt;');
+    const title = (l.title || l.niche || '—').replace(/</g, '&lt;');
+    const url = l.source_url || l.website || '#';
+    const type = (l.lead_type || 'unknown').replace('_', ' ');
+    return `<tr onclick="showDetail(${i})" style="cursor:pointer">
+      <td><span class="score ${scoreClass}">${score}</span></td>
+      <td><b>${name}</b>${l.country ? '<br><small style="color:#888">' + l.country + '</small>' : ''}${l.email ? '<br><small style="color:#2ecc71">✉ ' + l.email + '</small>' : ''}</td>
+      <td>${title}</td>
+      <td><span class="badge b-${(l.source||'?').toLowerCase()}">${l.source || '?'}</span></td>
+      <td>${type}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('lead-rows').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:#888;padding:32px">No leads match your filters. Try running the pipeline!</td></tr>';
+}
+
+async function loadStats() {
+  const res = await fetch('/api/stats');
+  const data = await res.json();
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat"><div class="num">${data.total_leads}</div><div class="label">Total Leads</div></div>
+    <div class="stat"><div class="num">${data.with_email}</div><div class="label">With Email</div></div>
+    <div class="stat"><div class="num">${data.with_phone}</div><div class="label">With Phone</div></div>
+    <div class="stat"><div class="num">${Object.keys(data.by_source).length}</div><div class="label">Sources</div></div>
+  `;
+  // Build sources list
+  sources = new Set(Object.keys(data.by_source));
+  const srcSel = document.getElementById('src-filter');
+  const current = srcSel.value;
+  srcSel.innerHTML = '<option value="">All sources</option>' + [...sources].sort().map(s => `<option ${s===current?'selected':''}>${s} (${data.by_source[s]})</option>`).join('');
+
+  // Add type stats
+  const typeStats = Object.entries(data.by_type).map(([t, n]) => `<div>${t.replace('_',' ')}: ${n}</div>`).join('');
+  if (typeStats) {
+    const statGrid = document.getElementById('stat-grid');
+    statGrid.innerHTML += `<div class="stat" style="grid-column:span 2;font-size:13px"><div style="text-align:left">${typeStats}</div></div>`;
+  }
+}
+
+async function loadStatus() {
+  const res = await fetch('/api/status');
+  const s = await res.json();
+  const stateEl = document.getElementById('run-state');
+  const textEl = document.getElementById('run-state-text');
+  const btn = document.getElementById('run-btn');
+  if (s.is_running) {
+    stateEl.className = 'running';
+    stateEl.textContent = '● RUNNING';
+    textEl.textContent = `Crawling ${s.current_source}...`;
+    btn.disabled = true;
+    btn.textContent = '⏳ Running...';
+  } else {
+    stateEl.className = 'stopped';
+    stateEl.textContent = '●';
+    textEl.textContent = s.last_finished ? `Last run: ${new Date(s.last_finished).toLocaleString()}` : 'Idle';
+    btn.disabled = false;
+    btn.textContent = '▶ Run Pipeline';
+  }
+}
+
+async function loadSettings() {
+  const res = await fetch('/api/settings');
+  const s = await res.json();
+  document.getElementById('discord-webhook').value = s.discord_webhook || '';
+  document.getElementById('telegram-token').value = s.telegram_token || '';
+  document.getElementById('telegram-chat').value = s.telegram_chat_id || '';
+  document.getElementById('slack-webhook').value = s.slack_webhook || '';
+  document.getElementById('min-score').value = s.notify_min_score || 30;
+}
+
+async function loadLogs() {
+  const res = await fetch('/api/logs');
+  const data = await res.json();
+  const stream = document.getElementById('log-stream');
+  stream.innerHTML = data.lines.map(l => `<div class="line">${escapeHtml(l)}</div>`).join('');
+  stream.scrollTop = stream.scrollHeight;
+}
+
+// ----- Live log streaming -----
+function startLogStream() {
+  if (es) es.close();
+  es = new EventSource('/api/stream');
+  es.onmessage = (e) => {
+    const stream = document.getElementById('log-stream');
+    const line = document.createElement('div');
+    line.className = 'line';
+    line.textContent = e.data;
+    stream.appendChild(line);
+    // Keep at most 200 lines
+    while (stream.children.length > 200) stream.removeChild(stream.firstChild);
+    stream.scrollTop = stream.scrollHeight;
+  };
+  es.onerror = () => {
+    // Reconnect after 3s
+    setTimeout(startLogStream, 3000);
+  };
+}
+
+// ----- Actions -----
+async function runPipeline() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Starting...';
+  try {
+    const res = await fetch('/api/run', {method: 'POST'});
+    const data = await res.json();
+    showToast(data.message || 'Pipeline started');
+    // Poll status every 2s while running
+    const poll = setInterval(async () => {
+      await loadStatus();
+      const s = await (await fetch('/api/status')).json();
+      if (!s.is_running) {
+        clearInterval(poll);
+        await refreshAll();
+      }
+    }, 2000);
+  } catch (e) {
+    showToast('Failed to start: ' + e, true);
+    btn.disabled = false;
+    btn.textContent = '▶ Run Pipeline';
+  }
+}
+
+async function saveSettings() {
+  const settings = {
+    discord_webhook: document.getElementById('discord-webhook').value,
+    telegram_token: document.getElementById('telegram-token').value,
+    telegram_chat_id: document.getElementById('telegram-chat').value,
+    slack_webhook: document.getElementById('slack-webhook').value,
+    notify_min_score: parseFloat(document.getElementById('min-score').value || '30'),
+  };
+  const res = await fetch('/api/settings', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(settings)
+  });
+  const data = await res.json();
+  showToast('Settings saved!');
+}
+
+async function testNotification() {
+  showToast('Sending test notification...');
+  const res = await fetch('/api/notify?min_score=0', {method: 'POST'});
+  const data = await res.json();
+  if (Object.keys(data.results).length === 0) {
+    showToast('No webhooks configured yet!', true);
+  } else {
+    const ok = Object.entries(data.results).filter(([_, v]) => v).map(([k]) => k).join(', ');
+    showToast(`Sent via: ${ok || 'all failed'}`);
+  }
+}
+
+function showDetail(i) {
+  const l = allLeads[i];
+  document.getElementById('modal-title').textContent = l.company_name || 'Lead';
+  const body = document.getElementById('modal-body');
+  body.textContent = JSON.stringify(l, null, 2);
+  // Show action buttons
+  const actions = document.getElementById('modal-actions');
+  actions.innerHTML = `
+    <button class="btn btn-primary" onclick="enrichLead(${i})">📧 Enrich Email</button>
+    <button class="btn" onclick="generateEmailSeq(${i})">✉️ Draft Email Sequence</button>
+    <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+    <div id="enrich-result-${i}" style="margin-top:12px"></div>
+  `;
+  document.getElementById('lead-modal').classList.add('open');
+}
+
+async function enrichLead(i) {
+  const lead = allLeads[i];
+  const resultDiv = document.getElementById(`enrich-result-${i}`);
+  resultDiv.innerHTML = '<p style="color:#9ecbff">⏳ Enriching... (this may take a few seconds)</p>';
+  try {
+    const res = await fetch('/api/enrich?min_score=0&limit=1', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lead})
+    });
+    const data = await res.json();
+    if (data.results && data.results[0]) {
+      const updated = data.results[0];
+      const email = updated.email || 'no email found';
+      const source = updated.enrichment_source || 'none';
+      const conf = updated.enrichment_confidence || 0;
+      resultDiv.innerHTML = `
+        <div style="background:#14171c;padding:12px;border-radius:4px;margin-top:8px">
+          <p><b>📧 ${email}</b></p>
+          <p style="font-size:12px;color:#888">Source: ${source} | Confidence: ${conf}%</p>
+          ${updated.enrichment_notes ? '<p style="font-size:12px;color:#9ecbff">' + escapeHtml(updated.enrichment_notes) + '</p>' : ''}
+          ${updated.enrichment_guesses ? '<details style="margin-top:8px"><summary style="cursor:pointer;color:#888;font-size:12px">All pattern guesses</summary><p style="font-size:11px;color:#888">' + updated.enrichment_guesses.join('<br>') + '</p></details>' : ''}
+          <p style="font-size:11px;color:#f39c12;margin-top:8px">⚠️ Verify before sending. Free tier APIs are limited (25-50 searches/month).</p>
+        </div>
+      `;
+    } else {
+      resultDiv.innerHTML = '<p style="color:#c0392b">❌ No email found. Try manually with LinkedIn / Apollo.io</p>';
+    }
+  } catch (e) {
+    resultDiv.innerHTML = '<p style="color:#c0392b">Error: ' + e + '</p>';
+  }
+}
+
+async function generateEmailSeq(i) {
+  const lead = allLeads[i];
+  const resultDiv = document.getElementById(`enrich-result-${i}`);
+  resultDiv.innerHTML = '<p style="color:#9ecbff">⏳ Generating sequence (template mode)...</p>';
+  try {
+    const res = await fetch('/api/email_sequence', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lead: lead, use_llm: false})
+    });
+    const data = await res.json();
+    const seq = data.sequence || {};
+    const errorMsg = seq.error ? `<p style="color:#c0392b">⚠️ ${escapeHtml(seq.error)}</p>` : '';
+    resultDiv.innerHTML = `
+      <div style="background:#14171c;padding:12px;border-radius:4px;margin-top:8px;max-height:400px;overflow-y:auto">
+        ${errorMsg}
+        ${seq.subject_1 ? `
+          <p style="margin-top:8px"><b>📧 Email 1</b> (Day 0)</p>
+          <p style="font-size:12px;color:#9ecbff">Subject: ${escapeHtml(seq.subject_1 || '')}</p>
+          <pre style="white-space:pre-wrap;font-size:12px;background:#0a0c10;padding:8px;border-radius:4px">${escapeHtml(seq.body_1 || '')}</pre>
+          <p style="font-size:12px;color:#9ecbff">Subject: ${escapeHtml(seq.subject_2 || '')}</p>
+          <pre style="white-space:pre-wrap;font-size:12px;background:#0a0c10;padding:8px;border-radius:4px">${escapeHtml(seq.body_2 || '')}</pre>
+          <p style="font-size:12px;color:#9ecbff">Subject: ${escapeHtml(seq.subject_3 || '')}</p>
+          <pre style="white-space:pre-wrap;font-size:12px;background:#0a0c10;padding:8px;border-radius:4px">${escapeHtml(seq.body_3 || '')}</pre>
+        ` : ''}
+        ${seq.personalization_notes ? `
+          <p style="font-size:12px;color:#f39c12;margin-top:8px"><b>⚠️ Before sending:</b></p>
+          <pre style="white-space:pre-wrap;font-size:11px;background:#0a0c10;padding:8px;border-radius:4px;color:#9ecbff">${escapeHtml(seq.personalization_notes)}</pre>
+        ` : ''}
+        <p style="font-size:11px;color:#888;margin-top:12px">
+          💡 Generic AI emails get &lt;2% reply rates. Spend 5 min adding personal details (specific past work, what you noticed about their company, mutual connection).
+        </p>
+      </div>
+    `;
+  } catch (e) {
+    resultDiv.innerHTML = '<p style="color:#c0392b">Error: ' + e + '</p>';
+  }
+}
+
+function closeModal() {
+  document.getElementById('lead-modal').classList.remove('open');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error' : '';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function exportCSV() {
+  // Export ALL leads (no filters)
+  window.location.href = '/api/export/csv';
+  showToast('Downloading all leads...');
+}
+
+function exportFilteredCSV() {
+  // Export with current filters
+  const params = new URLSearchParams();
+  const search = document.getElementById('q').value;
+  const src = document.getElementById('src-filter').value;
+  const type = document.getElementById('type-filter').value;
+  const minScore = document.getElementById('score-filter').value;
+  const emailOnly = document.getElementById('email-only').checked;
+  if (src) params.set('source', src);
+  if (type) params.set('lead_type', type);
+  if (minScore) params.set('min_score', minScore);
+  if (emailOnly) params.set('has_email', 'true');
+  const qs = params.toString();
+  window.location.href = '/api/export/csv' + (qs ? '?' + qs : '');
+  showToast('Downloading filtered leads...');
+}
+
+async function copyEmails() {
+  const res = await fetch('/api/leads?has_email=true&limit=500');
+  const data = await res.json();
+  const emails = (data.results || []).map(l => l.email).filter(Boolean);
+  if (emails.length === 0) {
+    showToast('No emails in leads yet', true);
+    return;
+  }
+  const text = emails.join(', ');
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast(`Copied ${emails.length} emails to clipboard!`);
+  } catch (e) {
+    // Fallback: show in a prompt
+    prompt('Copy these emails:', text);
+  }
+}
+
+function openDataFolder() {
+  // Opens the data folder in file explorer (works on Windows)
+  fetch('/api/open_data_folder', {method: 'POST'}).catch(() => {});
+  showToast('Opening data folder...');
+}
+
+// ----- Filter change handlers -----
+['q', 'src-filter', 'type-filter', 'score-filter', 'email-only'].forEach(id => {
+  document.getElementById(id).addEventListener('input', loadLeads);
+  document.getElementById(id).addEventListener('change', loadLeads);
+});
+
+// ----- Start -----
+refreshAll();
+startLogStream();
+// Auto-refresh status every 5s
+setInterval(() => { loadStatus(); }, 5000);
+setInterval(() => { loadStats(); }, 30000);
+</script>
+</body>
+</html>
